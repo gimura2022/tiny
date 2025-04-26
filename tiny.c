@@ -29,8 +29,8 @@
 /* size for buffers inside code */
 #define BUFFER_SIZE 1024
 
-#define NET_FAILURE -1	/* exit code for net errors */
-#define ARG_FAILURE -2	/* exit code for invalid arguments */
+#define NET_FAILURE 0	/* exit code for net errors */
+#define ARG_FAILURE 1	/* exit code for invalid arguments */
 
 /* encryption type */
 enum encrypt {

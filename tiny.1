@@ -1,0 +1,55 @@
+.TH tiny 1 2025-04-26 BSD-0
+
+.SH NAME
+tiny \- simple serial two size text messenger
+
+.SH SYNOPSIS
+.B tiny
+[\fB\-h\fR]
+[\fB\-H\fR]
+[\fB\-c\fR]
+[\fB\-p\fI port\fR]
+[\fB\-a\fI address\fR]
+[\fB\-e\fI none\fI xor\fR]
+[\fB\-k\fI number\fR]
+
+.SH DESCRIPTION
+.B tiny
+is very small serial two side text messenger
+
+.SH OPTIONS
+.TP
+.BR \-h
+prints usage to stdout.
+.TP
+.BR \-H
+runs tiny in host mode.
+.TP
+.BR \-c
+runs tiny in client mode.
+.TP
+.BR \-p " " \fIport
+specifys port for host or client.
+.TP
+.BR \-a " " \fIaddress
+specifys address for client.
+.TP
+.BR \-e " " \fInone " " \fIxor
+specifys encryption mode: none - without encryption, xor - xor encryption using \fBencryption key\fR as key
+.TP
+.BR \-k " " \fInumber
+specifys \fBencryption key\fR
+
+.SH EXIT STATUS
+.TP
+.BR 0
+program exited success.
+.TP
+.BR 1
+program exited because received net error. 
+.TP
+.BR 2
+program exited because argument format is invalid.
+
+.SH AUTHOR
+gimura <gimura0001@gmail.com>
