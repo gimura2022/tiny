@@ -1,0 +1,42 @@
+tiny(1)			    General Commands Manual		       tiny(1)
+
+NAME
+       tiny - simple serial two size text messenger
+
+SYNOPSIS
+       tiny [-h] [-H] [-c] [-p port] [-a address] [-e none xor] [-k number]
+
+DESCRIPTION
+       tiny is very small serial two side text messenger
+
+OPTIONS
+       -h     prints usage to stdout.
+
+       -H     runs tiny in host mode.
+
+       -c     runs tiny in client mode.
+
+       -p port
+	      specifys port for host or client.
+
+       -a address
+	      specifys address for client.
+
+       -e none xor
+	      specifys encryption mode: none - without encryption, xor - xor
+	      encryption using encryption key as key
+
+       -k number
+	      specifys encryption key
+
+EXIT STATUS
+       0      program exited success.
+
+       1      program exited because received net error.
+
+       2      program exited because argument format is invalid.
+
+AUTHOR
+       gimura <gimura0001@gmail.com>
+
+BSD-0				  2025-04-26			       tiny(1)
