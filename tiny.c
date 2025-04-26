@@ -12,8 +12,29 @@
 
 #define BUFFER_SIZE 1024
 
-static uint16_t port       = 8080;
-static const char* address = NULL;
+enum encrypt {
+	ENCRYPT_NONE = 0,
+};
+
+static uint16_t port        = 8080;
+static const char* address  = NULL;
+static enum encrypt encrypt = ENCRYPT_NONE;
+
+static char* encrypt_msg(const char* source)
+{
+	switch (encrypt) {
+	case ENCRYPT_NONE:
+		return strcpy(malloc(strlen(source) + 1), source);
+	}
+}
+
+static char* decrypt_msg(const char* source)
+{
+	switch (encrypt) {
+	case ENCRYPT_NONE:
+		return strcpy(malloc(strlen(source) + 1), source);
+	}
+}
 
 static void host(void)
 {
@@ -66,12 +87,18 @@ static void host(void)
 		}
 
 		buffer[valread] = '\0';
-		
-		printf("otherside: %s", buffer);
+
+		char* decrypted = decrypt_msg(buffer);
+		printf("otherside: %s\n", decrypted);
+		free(decrypted);
 		
 		printf("you: ");
 		fgets(buffer, BUFFER_SIZE, stdin);
-		send(new_socket, buffer, strlen(buffer), 0);
+		buffer[strlen(buffer) - 1] = '\0';
+
+		char* encrypted = encrypt_msg(buffer);
+		send(new_socket, encrypted, strlen(encrypted), 0);
+		free(encrypted);
 	}
 	
 	close(new_socket);
@@ -110,8 +137,11 @@ static void client(void)
 	while(1) {
 		printf("you: ");
 		fgets(buffer, BUFFER_SIZE, stdin);
-		
-		send(sock, buffer, strlen(buffer), 0);
+		buffer[strlen(buffer) - 1] = '\0';
+
+		char* encrypted = encrypt_msg(buffer);
+		send(sock, encrypted, strlen(encrypted), 0);
+		free(encrypted);
 		
 		int valread = read(sock, buffer, BUFFER_SIZE);
 
@@ -122,23 +152,38 @@ static void client(void)
 
 		buffer[valread] = '\0';
 		
-		printf("otherside: %s", buffer);
+		char* decrypted = decrypt_msg(buffer);
+		printf("otherside: %s\n", decrypted);
+		free(decrypted);
 	}
 	
 	close(sock);
 }
 
-#define USAGE_SMALL "usage: tiny [-h] [-H] [-c] [-p] [-a]\n"
+#define USAGE_SMALL "usage: tiny [-h] [-H] [-c] [-p port] [-a address] [-e none caesar]\n"
 #define USAGE \
-	"	-h	print usage\n" \
-	"	-H	start tiny in host mode\n" \
-	"	-c	start tiny in client mode\n" \
-	"	-p	specify port\n" \
-	"	-a	specify address\n"
+	"	-h	to print usage\n" \
+	"	-H	to start tiny in host mode\n" \
+	"	-c	to start tiny in client mode\n" \
+	"	-p	port\n" \
+	"	-a	address\n" \
+	"	-e	select one of:\n" \
+	"			none	without encryption\n" \
+	"			caesar	caesar encryption\n"
 
 static void usage(FILE* stream, bool small)
 {
 	fprintf(stream, small ? USAGE_SMALL : USAGE_SMALL USAGE);
+}
+
+static enum encrypt get_encryption_method(const char* str)
+{
+	if (strcmp(str, "none") == 0)
+		return ENCRYPT_NONE;
+
+	fprintf(stderr, "tiny: invalid encryption method name\n");
+	usage(stderr, true);
+	exit(EXIT_FAILURE);
 }
 
 int main(int argc, char* argv[])
@@ -147,10 +192,10 @@ int main(int argc, char* argv[])
 		MODE_UNSPECIFIED = 0,
 		MODE_HOST,
 		MODE_CLIENT,
-	} mode              = MODE_UNSPECIFIED;
+	} mode = MODE_UNSPECIFIED;
 
 	int c;
-	while ((c = getopt(argc, argv, "Hhcp:a:")) != -1) switch (c) {
+	while ((c = getopt(argc, argv, "Hhcp:a:e:")) != -1) switch (c) {
 	case 'H':
 		mode = MODE_HOST;
 		break;
@@ -165,6 +210,10 @@ int main(int argc, char* argv[])
 
 	case 'a':
 		address = optarg;
+		break;
+
+	case 'e':
+		encrypt = get_encryption_method(optarg);
 		break;
 
 	case 'h':
