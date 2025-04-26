@@ -14,17 +14,33 @@
 
 enum encrypt {
 	ENCRYPT_NONE = 0,
+	ENCRYPT_XOR,
 };
 
 static uint16_t port        = 8080;
 static const char* address  = NULL;
 static enum encrypt encrypt = ENCRYPT_NONE;
+static int encrypt_key      = 0;
+
+static char* apply_xor(const char* source)
+{
+	char* out           = malloc(strlen(source) + 1);
+	out[strlen(source)] = '\0';
+
+	for (int i = 0; i < strlen(source); i++)
+		out[i] = source[i] ^ encrypt_key;
+
+	return out;
+}
 
 static char* encrypt_msg(const char* source)
 {
 	switch (encrypt) {
 	case ENCRYPT_NONE:
 		return strcpy(malloc(strlen(source) + 1), source);
+
+	case ENCRYPT_XOR:
+		return apply_xor(source);
 	}
 }
 
@@ -33,6 +49,9 @@ static char* decrypt_msg(const char* source)
 	switch (encrypt) {
 	case ENCRYPT_NONE:
 		return strcpy(malloc(strlen(source) + 1), source);
+
+	case ENCRYPT_XOR:
+		return apply_xor(source);
 	}
 }
 
@@ -160,7 +179,7 @@ static void client(void)
 	close(sock);
 }
 
-#define USAGE_SMALL "usage: tiny [-h] [-H] [-c] [-p port] [-a address] [-e none caesar]\n"
+#define USAGE_SMALL "usage: tiny [-h] [-H] [-c] [-p port] [-a address] [-e none xor] [-k number]\n"
 #define USAGE \
 	"	-h	to print usage\n" \
 	"	-H	to start tiny in host mode\n" \
@@ -169,7 +188,8 @@ static void client(void)
 	"	-a	address\n" \
 	"	-e	select one of:\n" \
 	"			none	without encryption\n" \
-	"			caesar	caesar encryption\n"
+	"			xor	xor encryption\n" \
+	"	-k	key for encryption\n"
 
 static void usage(FILE* stream, bool small)
 {
@@ -180,6 +200,8 @@ static enum encrypt get_encryption_method(const char* str)
 {
 	if (strcmp(str, "none") == 0)
 		return ENCRYPT_NONE;
+	else if (strcmp(str, "xor") == 0)
+		return ENCRYPT_XOR;
 
 	fprintf(stderr, "tiny: invalid encryption method name\n");
 	usage(stderr, true);
@@ -195,7 +217,7 @@ int main(int argc, char* argv[])
 	} mode = MODE_UNSPECIFIED;
 
 	int c;
-	while ((c = getopt(argc, argv, "Hhcp:a:e:")) != -1) switch (c) {
+	while ((c = getopt(argc, argv, "Hhcp:a:e:k:")) != -1) switch (c) {
 	case 'H':
 		mode = MODE_HOST;
 		break;
@@ -214,6 +236,10 @@ int main(int argc, char* argv[])
 
 	case 'e':
 		encrypt = get_encryption_method(optarg);
+		break;
+
+	case 'k':
+		encrypt_key = atoi(optarg);
 		break;
 
 	case 'h':
