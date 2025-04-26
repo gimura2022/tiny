@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
+#include <getopt.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -24,10 +25,13 @@ static int encrypt_key      = 0;
 
 static char* apply_xor(const char* source)
 {
-	char* out           = malloc(strlen(source) + 1);
+	char* out;
+	int i;
+
+	out                 = malloc(strlen(source) + 1);
 	out[strlen(source)] = '\0';
 
-	for (int i = 0; i < strlen(source); i++)
+	for (i = 0; i < strlen(source); i++)
 		out[i] = source[i] ^ encrypt_key;
 
 	return out;
@@ -68,7 +72,7 @@ static void host(void)
 		exit(EXIT_FAILURE);
 	}
 	
-	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
 		perror("setsockopt");
 		exit(EXIT_FAILURE);
 	}
