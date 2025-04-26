@@ -12,7 +12,10 @@
 
 #define BUFFER_SIZE 1024
 
-static void host(uint16_t port)
+static uint16_t port       = 8080;
+static const char* address = NULL;
+
+static void host(void)
 {
 	int server_fd, new_socket;
 	struct sockaddr_in address;
@@ -75,7 +78,7 @@ static void host(uint16_t port)
 	close(server_fd);
 }
 
-static void client(const char* address, uint16_t port)
+static void client(void)
 {
 	int sock;
 	struct sockaddr_in serv_addr;
@@ -145,8 +148,6 @@ int main(int argc, char* argv[])
 		MODE_HOST,
 		MODE_CLIENT,
 	} mode              = MODE_UNSPECIFIED;
-	uint16_t port       = 8080;
-	const char* address = NULL;
 
 	int c;
 	while ((c = getopt(argc, argv, "Hhcp:a:")) != -1) switch (c) {
@@ -184,12 +185,12 @@ int main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 		}
 
-		client(address, port);
+		client();
 
 		break;
 
 	case MODE_HOST:
-		host(port);
+		host();
 		break;
 
 	case MODE_UNSPECIFIED:
