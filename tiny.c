@@ -1,3 +1,18 @@
+/*
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted.
+
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE
+ * FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+ * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+ * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/* tiny - simple serial two side messenger */
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,8 +26,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+/* size for buffers inside code */
 #define BUFFER_SIZE 1024
 
+/* encryption type */
 enum encrypt {
 	ENCRYPT_NONE = 0,
 	ENCRYPT_XOR,
@@ -23,6 +40,7 @@ static const char* address  = NULL;
 static enum encrypt encrypt = ENCRYPT_NONE;
 static int encrypt_key      = 0;
 
+/* apply xor to line */
 static char* apply_xor(const char* source)
 {
 	char* out;
@@ -37,6 +55,7 @@ static char* apply_xor(const char* source)
 	return out;
 }
 
+/* encrypt text */
 static char* encrypt_msg(const char* source)
 {
 	switch (encrypt) {
@@ -48,6 +67,7 @@ static char* encrypt_msg(const char* source)
 	}
 }
 
+/* decrypt text */
 static char* decrypt_msg(const char* source)
 {
 	switch (encrypt) {
@@ -59,6 +79,7 @@ static char* decrypt_msg(const char* source)
 	}
 }
 
+/* start tiny at host mode */
 static void host(void)
 {
 	int server_fd, new_socket;
@@ -128,6 +149,7 @@ static void host(void)
 	close(server_fd);
 }
 
+/* start tiny at client mode */
 static void client(void)
 {
 	int sock;
@@ -195,11 +217,13 @@ static void client(void)
 	"			xor	xor encryption\n" \
 	"	-k	key for encryption\n"
 
+/* print usage */
 static void usage(FILE* stream, bool small)
 {
 	fprintf(stream, small ? USAGE_SMALL : USAGE_SMALL USAGE);
 }
 
+/* get encryption method from string */
 static enum encrypt get_encryption_method(const char* str)
 {
 	if (strcmp(str, "none") == 0)
