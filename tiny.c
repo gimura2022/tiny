@@ -29,16 +29,19 @@
 /* size for buffers inside code */
 #define BUFFER_SIZE 1024
 
+#define NET_FAILURE -1	/* exit code for net errors */
+#define ARG_FAILURE -2	/* exit code for invalid arguments */
+
 /* encryption type */
 enum encrypt {
 	ENCRYPT_NONE = 0,
 	ENCRYPT_XOR,
 };
 
-static uint16_t port        = 8080;
-static const char* address  = NULL;
-static enum encrypt encrypt = ENCRYPT_NONE;
-static int encrypt_key      = 0;
+static uint16_t port        = 8080;		/* net port */
+static const char* address  = NULL;		/* ip address or domain */
+static enum encrypt encrypt = ENCRYPT_NONE;	/* encryption method (default no encryption) */
+static int encrypt_key      = 0;		/* key for encryption */
 
 /* apply xor to line */
 static char* apply_xor(const char* source)
@@ -90,12 +93,12 @@ static void host(void)
 	
 	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
 		perror("socket failed");
-		exit(EXIT_FAILURE);
+		exit(NET_FAILURE);
 	}
 	
 	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
 		perror("setsockopt");
-		exit(EXIT_FAILURE);
+		exit(NET_FAILURE);
 	}
 	
 	address.sin_family = AF_INET;
@@ -104,12 +107,12 @@ static void host(void)
 	
 	if (bind(server_fd, (struct sockaddr*) &address, sizeof(address)) < 0) {
 		perror("bind failed");
-		exit(EXIT_FAILURE);
+		exit(NET_FAILURE);
 	}
 
 	if (listen(server_fd, 3) < 0) {
 		perror("listen");
-		exit(EXIT_FAILURE);
+		exit(NET_FAILURE);
 	}
 
 	printf("server listen at %u...", port);
@@ -117,7 +120,7 @@ static void host(void)
 	
 	if ((new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &addrlen)) < 0) {
 		perror("accept");
-		exit(EXIT_FAILURE);
+		exit(NET_FAILURE);
 	}
 	
 	printf("connected\n");
@@ -158,15 +161,15 @@ static void client(void)
 	
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("socket");
-		exit(EXIT_FAILURE);
+		exit(NET_FAILURE);
 	}
 	
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(port);
 	
-	if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+	if (inet_pton(AF_INET, address, &serv_addr.sin_addr) <= 0) {
 		perror("inet_pton");
-		exit(EXIT_FAILURE);
+		exit(NET_FAILURE);
 	}
 
 	printf("connect to server at %s:%u...", address, port);
@@ -174,7 +177,7 @@ static void client(void)
 	
 	if (connect(sock, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0) {
 		perror("connect");
-		exit(EXIT_FAILURE);
+		exit(NET_FAILURE);
 	}
 	
 	printf("success\n");
@@ -233,7 +236,7 @@ static enum encrypt get_encryption_method(const char* str)
 
 	fprintf(stderr, "tiny: invalid encryption method name\n");
 	usage(stderr, true);
-	exit(EXIT_FAILURE);
+	exit(ARG_FAILURE);
 }
 
 int main(int argc, char* argv[])
@@ -277,7 +280,7 @@ int main(int argc, char* argv[])
 	case '?':
 		fprintf(stderr, "tiny: invalid option\n");
 		usage(stderr, true);
-		exit(EXIT_FAILURE);
+		exit(ARG_FAILURE);
 	}
 
 	switch (mode) {
@@ -285,7 +288,7 @@ int main(int argc, char* argv[])
 		if (address == NULL) {
 			fprintf(stderr, "tiny: host address not specified\n");
 			usage(stderr, true);
-			exit(EXIT_FAILURE);
+			exit(ARG_FAILURE);
 		}
 
 		client();
@@ -299,7 +302,7 @@ int main(int argc, char* argv[])
 	case MODE_UNSPECIFIED:
 		fprintf(stderr, "tiny: working mode not specified\n");
 		usage(stderr, true);
-		exit(EXIT_FAILURE);
+		exit(ARG_FAILURE);
 	}
 
 	return 0;
