@@ -53,9 +53,9 @@ enum encrypt {
 
 static uint16_t port        = 8080;		/* net port */
 static const char* address  = NULL;		/* ip address or domain */
-static enum encrypt encrypt = ENCRYPT_NONE;	/* encryption method (default no encryption) */
+static enum encrypt encrypt = ENCRYPT_XOR;	/* encryption method (default no encryption) */
 static uint32_t encrypt_key = 0;		/* key for encryption */
-static bool random_key      = false;		/* generate ramdom key and sync it with otherside */
+static bool random_key      = true;		/* generate ramdom key and sync it with otherside */
 static bool verbose_mode    = false;		/* verbose mode */
 
 /* formula for calculating key */
