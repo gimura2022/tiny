@@ -3,8 +3,6 @@ DESTDIR ?= /
 
 RM ?= rm -rf
 
-LDLIBS += -lm
-
 all: tiny
 
 clean:

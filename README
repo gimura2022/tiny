@@ -4,8 +4,7 @@ NAME
        tiny - simple serial two size text messenger
 
 SYNOPSIS
-       tiny [-h] [-H] [-c] [-p port] [-a address] [-e none xor] [-k number]
-       [-v] [-r]
+       tiny [-h] [-p port]
 
 DESCRIPTION
        tiny is very small serial two side text messenger
@@ -13,26 +12,8 @@ DESCRIPTION
 OPTIONS
        -h     prints usage to stdout.
 
-       -H     runs tiny in host mode.
-
-       -c     runs tiny in client mode.
-
        -p port
 	      specifys port for host or client.
-
-       -a address
-	      specifys address for client.
-
-       -e none xor
-	      specifys encryption mode: none - without encryption, xor - xor
-	      encryption using encryption key as key
-
-       -k number
-	      specifys encryption key
-
-       -v     enable verbose mode.
-
-       -r     enable random key generation.
 
 EXIT STATUS
        0      program exited success.

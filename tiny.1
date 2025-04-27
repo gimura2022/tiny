@@ -6,14 +6,7 @@ tiny \- simple serial two size text messenger
 .SH SYNOPSIS
 .B tiny
 [\fB\-h\fR]
-[\fB\-H\fR]
-[\fB\-c\fR]
 [\fB\-p\fI port\fR]
-[\fB\-a\fI address\fR]
-[\fB\-e\fI none\fI xor\fR]
-[\fB\-k\fI number\fR]
-[\fB\-v\fR]
-[\fB\-r\fR]
 .
 .SH DESCRIPTION
 .B tiny
@@ -24,29 +17,8 @@ is very small serial two side text messenger
 .BR \-h
 prints usage to stdout.
 .TP
-.BR \-H
-runs tiny in host mode.
-.TP
-.BR \-c
-runs tiny in client mode.
-.TP
 .BR \-p " " \fIport
 specifys port for host or client.
-.TP
-.BR \-a " " \fIaddress
-specifys address for client.
-.TP
-.BR \-e " " \fInone " " \fIxor
-specifys encryption mode: none - without encryption, xor - xor encryption using \fBencryption key\fR as key
-.TP
-.BR \-k " " \fInumber
-specifys \fBencryption key\fR
-.TP
-.BR \-v
-enable verbose mode.
-.TP
-.BR \-r
-enable random key generation.
 .
 .SH EXIT STATUS
 .TP
