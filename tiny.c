@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 	int addrlen       = sizeof(address);
 	int opt           = 1;
 
-	if (strcmp(argv[1], "-h") == 0 || argc < 2) {
+	if (argc < 2 || strcmp(argv[1], "-h") == 0) {
 		puts("usage: tiny port [-h]\n""	-h	print usage\n""	-p	port, default 8080");
 		exit(argc < 2 ? -2 : EXIT_SUCCESS);
 	}
