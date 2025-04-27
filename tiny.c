@@ -17,8 +17,8 @@
 
 #define USAGE_SMALL "usage: tiny [-h] [-p port]\n"
 #define USAGE \
-	"	-h	to print usage\n" \
-	"	-p	port\n" \
+	"	-h	print usage\n" \
+	"	-p	port\n"
 
 static void usage(FILE* stream, bool small)
 {
@@ -27,7 +27,7 @@ static void usage(FILE* stream, bool small)
 
 int main(int argc, char* argv[])
 {
-	int server_fd, new_socket, c, readcount;
+	int server_fd, user_fd, c, readcount;
 	struct sockaddr_in address;
 	char buffer[BUFFER_SIZE] = {0};
 	int addrlen              = sizeof(address);
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 	address.sin_port = htons(port);
 	
 	if (bind(server_fd, (struct sockaddr*) &address, sizeof(address)) < 0) {
-		perror("bind failed");
+		perror("bind");
 		exit(NET_FAILURE);
 	}
 
@@ -73,29 +73,24 @@ int main(int argc, char* argv[])
 		exit(NET_FAILURE);
 	}
 
-	if ((new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &addrlen)) < 0) {
+	if ((user_fd = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &addrlen)) < 0) {
 		perror("accept");
 		exit(NET_FAILURE);
 	}
 
-	printf("connected\n");
-
 	while(true) {
-		readcount = read(new_socket, buffer, BUFFER_SIZE);
+		readcount = read(user_fd, buffer, BUFFER_SIZE);
 
-		if (readcount <= 0) {
-			printf("disconect\n");
+		if (readcount <= 0)
 			break;
-		}
 
-		buffer[readcount] = '\0';
 		fputs(buffer, stdout);
 		
 		fgets(buffer, BUFFER_SIZE, stdin);
-		send(new_socket, buffer, strlen(buffer), 0);
+		send(user_fd, buffer, strlen(buffer), 0);
 	}
 	
-	close(new_socket);
+	close(user_fd);
 	close(server_fd);
 
 	return 0;
