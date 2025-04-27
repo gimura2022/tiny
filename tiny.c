@@ -3,7 +3,6 @@
 #include <string.h>
 #include <getopt.h>
 #include <unistd.h>
-#include <err.h>
 #include <netinet/in.h>
 
 #define pexit(x) { perror(x); exit(1); }
@@ -29,7 +28,7 @@ int main(int argc, char* argv[])
 		exit(EXIT_SUCCESS);
 
 	case '?':
-		err(2, "invalid option, see usage for more info");
+		exit(2);
 	}
 
 	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
