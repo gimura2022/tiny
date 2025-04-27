@@ -5,6 +5,7 @@ NAME
 
 SYNOPSIS
        tiny [-h] [-H] [-c] [-p port] [-a address] [-e none xor] [-k number]
+       [-v]
 
 DESCRIPTION
        tiny is very small serial two side text messenger
@@ -28,6 +29,8 @@ OPTIONS
 
        -k number
 	      specifys encryption key
+
+       -v     enable verbose mode.
 
 EXIT STATUS
        0      program exited success.
