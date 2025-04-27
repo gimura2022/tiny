@@ -10,7 +10,6 @@ int main(int argc, char* argv[])
 {
 	int server, user;
 	char buffer[1024]    = {0};
-	int opt              = 1;
 	struct sockaddr_in a = {.sin_family = AF_INET, .sin_addr.s_addr = INADDR_ANY,
 		.sin_port = htons(atoi(argv[1]))};
 	int al               = sizeof(a);
@@ -21,7 +20,6 @@ int main(int argc, char* argv[])
 	}
 
 	if ((server = socket(AF_INET, SOCK_STREAM, 0)) == 0)				pexit("socket");
-	if (setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))		pexit("setsockopt");
 	if (bind(server, (struct sockaddr*) &a, al) < 0)				pexit("bind");
 	if (listen(server, 1) < 0)							pexit("listen");
 	if ((user = accept(server, (struct sockaddr*) &a, (socklen_t*) &al)) < 0)	pexit("accept");
