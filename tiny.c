@@ -102,7 +102,7 @@ static uint8_t* encrypt_xor(const char* source, size_t* out_len)
 
 	verbosef("encrypted messange: ");
 	for (i = 0; i < *out_len; i++)
-		verbosef("%x ", ((uint8_t*) out)[i]);
+		verbosef("%x", ((uint8_t*) out)[i]);
 	verbosef("\n");
 	verbosef("lenght: %u\n", *out_len);
 
