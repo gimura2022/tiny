@@ -20,8 +20,10 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <string.h>
+#include <math.h>
 #include <ctype.h>
 #include <getopt.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -32,6 +34,11 @@
 
 #define NET_FAILURE 0	/* exit code for net errors */
 #define ARG_FAILURE 1	/* exit code for invalid arguments */
+
+#define G 7	/* G constant */
+#define P 11	/* P constant */
+
+#define private_key(g, x) ((int) pow(g, (x)) % P)	/* formula for calculating key */
 
 #define get_bit(n, i) (((n) >> (i)) & 1)	/* get i bit from n */
 #define set_bit(n, i, x) ((x) == 0 ? \
@@ -50,6 +57,7 @@ static uint16_t port        = 8080;		/* net port */
 static const char* address  = NULL;		/* ip address or domain */
 static enum encrypt encrypt = ENCRYPT_NONE;	/* encryption method (default no encryption) */
 static uint32_t encrypt_key = 0;		/* key for encryption */
+static bool random_key      = false;		/* generate ramdom key and sync it with otherside */
 static bool verbose_mode    = false;		/* verbose mode */
 
 /* verbose print */
@@ -167,7 +175,8 @@ static void host(void)
 	int opt = 1;
 	int addrlen = sizeof(address);
 	char buffer[BUFFER_SIZE] = {0};
-	
+	time_t start, end;
+
 	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
 		perror("socket failed");
 		exit(NET_FAILURE);
@@ -199,8 +208,34 @@ static void host(void)
 		perror("accept");
 		exit(NET_FAILURE);
 	}
+
+	start = time(NULL);
 	
 	printf("connected\n");
+
+	if (random_key) {
+		uint32_t x, res;
+
+		verbosef("generating keys\n");
+
+		x = rand() % UINT32_MAX;
+		verbosef("private x is %u\n", x);
+
+		res = private_key(G, x);
+		verbosef("sending %u to otherside\n", res);
+
+		send(new_socket, &res, sizeof(res), 0);
+		if (read(new_socket, &res, sizeof(res)) <= 0) {
+			printf("disconect\n");
+			return;
+		}
+
+		encrypt_key = mix_encrypt_key(private_key(res, x));
+	}
+
+	end = time(NULL);
+
+	verbosef("connection established in %lds\n", end - start);
 	
 	while(1) {
 		verbosef("wait for otherside responce\n");
@@ -235,6 +270,9 @@ static void client(void)
 	int sock;
 	struct sockaddr_in serv_addr;
 	char buffer[BUFFER_SIZE] = {0};
+	time_t start, end;
+
+	start = time(NULL);
 	
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("socket");
@@ -258,6 +296,31 @@ static void client(void)
 	}
 	
 	printf("success\n");
+
+	if (random_key) {
+		uint32_t x, res, in;
+
+		verbosef("generating keys\n");
+
+		x = rand() % UINT32_MAX;
+		verbosef("private x is %u\n", x);
+
+		res = private_key(G, x);
+
+		if (read(sock, &in, sizeof(res)) <= 0) {
+			printf("disconect\n");
+			return;
+		}
+
+		verbosef("sending %u to otherside\n", res);
+		send(sock, &res, sizeof(res), 0);
+
+		encrypt_key = mix_encrypt_key(private_key(in, x));
+	}
+
+	end = time(NULL);
+
+	verbosef("connection established in %lds\n", end - start);
 	
 	while(1) {
 		printf("you: ");
@@ -285,7 +348,7 @@ static void client(void)
 	close(sock);
 }
 
-#define USAGE_SMALL "usage: tiny [-h] [-H] [-c] [-p port] [-a address] [-e none xor] [-k number] [-v]\n"
+#define USAGE_SMALL "usage: tiny [-h] [-H] [-c] [-p port] [-a address] [-e none xor] [-k number] [-v] [-r]\n"
 #define USAGE \
 	"	-h	to print usage\n" \
 	"	-H	to start tiny in host mode\n" \
@@ -296,7 +359,8 @@ static void client(void)
 	"			none	without encryption\n" \
 	"			xor	xor encryption\n" \
 	"	-k	key for encryption\n" \
-	"	-v	enable verbose mode\n"
+	"	-v	enable verbose mode\n" \
+	"	-r	enable random keys generation\n"
 
 /* print usage */
 static void usage(FILE* stream, bool small)
@@ -326,7 +390,7 @@ int main(int argc, char* argv[])
 	} mode = MODE_UNSPECIFIED;
 
 	int c;
-	while ((c = getopt(argc, argv, "Hhcp:a:e:k:v")) != -1) switch (c) {
+	while ((c = getopt(argc, argv, "Hhcp:a:e:k:vr")) != -1) switch (c) {
 	case 'H':
 		mode = MODE_HOST;
 		break;
@@ -357,6 +421,10 @@ int main(int argc, char* argv[])
 
 	case 'v':
 		verbose_mode = true;
+		break;
+
+	case 'r':
+		random_key = true;
 		break;
 
 	case '?':
