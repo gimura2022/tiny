@@ -1,5 +1,3 @@
-/* tiny - simple serial two side messenger */
-
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,17 +10,16 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define BUFFER_SIZE 1024	/* size for buffers inside code */
+#define BUFFER_SIZE 1024
 
-#define NET_FAILURE 0	/* exit code for net errors */
-#define ARG_FAILURE 1	/* exit code for invalid arguments */
+#define NET_FAILURE 1
+#define ARG_FAILURE 2
 
 #define USAGE_SMALL "usage: tiny [-h] [-p port]\n"
 #define USAGE \
 	"	-h	to print usage\n" \
 	"	-p	port\n" \
 
-/* print usage */
 static void usage(FILE* stream, bool small)
 {
 	fprintf(stream, small ? USAGE_SMALL : USAGE_SMALL USAGE);
