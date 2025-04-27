@@ -427,6 +427,7 @@ int main(int argc, char* argv[])
 
 	case 'k':
 		encrypt_key = mix_encrypt_key(atoi(optarg));
+		random_key  = false;
 		break;
 
 	case 'h':
