@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
 #include <getopt.h>
@@ -49,6 +50,20 @@ static uint16_t port        = 8080;		/* net port */
 static const char* address  = NULL;		/* ip address or domain */
 static enum encrypt encrypt = ENCRYPT_NONE;	/* encryption method (default no encryption) */
 static uint32_t encrypt_key = 0;		/* key for encryption */
+static bool verbose_mode    = false;		/* verbose mode */
+
+/* verbose print */
+static void verbosef(const char* fmt, ...)
+{
+	va_list args;
+
+	if (!verbose_mode)
+		return;
+
+	va_start(args, fmt);
+	vfprintf(stderr, fmt, args);
+	va_end(args);
+}
 
 /* table for mixing bits in encrypt key */
 static uint8_t mix_encrypt_key_table[] = {
@@ -61,10 +76,13 @@ static uint8_t mix_encrypt_key_table[] = {
 /* mix encrypt key bits */
 static uint32_t mix_encrypt_key(uint32_t old_key)
 {
-	uint32_t res = old_key;
+	uint32_t res;
+	int i;
 
-	for (int i = 0; i < array_len(mix_encrypt_key_table); i++)
-		res = set_bit(res, i, get_bit(res, mix_encrypt_key_table[i]));
+	for (i = 0; i < array_len(mix_encrypt_key_table); i++)
+		res = set_bit(res, i, get_bit(old_key, mix_encrypt_key_table[i]));
+
+	verbosef("setuped new encryption key: %u\n", res);
 
 	return res;
 }
@@ -82,6 +100,12 @@ static uint8_t* encrypt_xor(const char* source, size_t* out_len)
 	for (i = 1; i < strlen(source); i++)
 		out[i] = source[i] ^ source[i - 1];
 
+	verbosef("encrypted messange: ");
+	for (i = 0; i < *out_len; i++)
+		verbosef("%x ", ((uint8_t*) out)[i]);
+	verbosef("\n");
+	verbosef("lenght: %u\n", *out_len);
+
 	return (uint8_t*) out;
 }
 
@@ -91,6 +115,8 @@ static char* decrypt_xor(const uint8_t* source, size_t len)
 	char* out;
 	uint32_t* int_source;
 	int i;
+
+	verbosef("encrypted messange length: %u\n", len);
 
 	if (len % sizeof(uint32_t) != 0) {
 		fprintf(stderr, "invalid encryption\n");
@@ -177,6 +203,7 @@ static void host(void)
 	printf("connected\n");
 	
 	while(1) {
+		verbosef("wait for otherside responce\n");
 		int valread = read(new_socket, buffer, BUFFER_SIZE);
 
 		if (valread <= 0) {
@@ -242,6 +269,7 @@ static void client(void)
 		send(sock, encrypted, out_len, 0);
 		free(encrypted);
 		
+		verbosef("wait for otherside responce\n");
 		int valread = read(sock, buffer, BUFFER_SIZE);
 
 		if (valread <= 0) {
@@ -257,7 +285,7 @@ static void client(void)
 	close(sock);
 }
 
-#define USAGE_SMALL "usage: tiny [-h] [-H] [-c] [-p port] [-a address] [-e none xor] [-k number]\n"
+#define USAGE_SMALL "usage: tiny [-h] [-H] [-c] [-p port] [-a address] [-e none xor] [-k number] [-v]\n"
 #define USAGE \
 	"	-h	to print usage\n" \
 	"	-H	to start tiny in host mode\n" \
@@ -267,7 +295,8 @@ static void client(void)
 	"	-e	select one of:\n" \
 	"			none	without encryption\n" \
 	"			xor	xor encryption\n" \
-	"	-k	key for encryption\n"
+	"	-k	key for encryption\n" \
+	"	-v	enable verbose mode\n"
 
 /* print usage */
 static void usage(FILE* stream, bool small)
@@ -297,7 +326,7 @@ int main(int argc, char* argv[])
 	} mode = MODE_UNSPECIFIED;
 
 	int c;
-	while ((c = getopt(argc, argv, "Hhcp:a:e:k:")) != -1) switch (c) {
+	while ((c = getopt(argc, argv, "Hhcp:a:e:k:v")) != -1) switch (c) {
 	case 'H':
 		mode = MODE_HOST;
 		break;
@@ -325,6 +354,10 @@ int main(int argc, char* argv[])
 	case 'h':
 		usage(stdout, false);
 		exit(EXIT_SUCCESS);
+
+	case 'v':
+		verbose_mode = true;
+		break;
 
 	case '?':
 		fprintf(stderr, "tiny: invalid option\n");
