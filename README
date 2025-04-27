@@ -4,7 +4,7 @@ NAME
        tiny - simple serial two size text messenger
 
 SYNOPSIS
-       tiny [-h] [-p port]
+       tiny port [-h]
 
 DESCRIPTION
        tiny is very small serial two side text messenger
@@ -12,15 +12,12 @@ DESCRIPTION
 OPTIONS
        -h     prints usage to stdout.
 
-       -p port
-	      specifys port for host or client.
-
 EXIT STATUS
        0      program exited success.
 
-       1      program exited because received net error.
+       -1     program exited because received net error.
 
-       2      program exited because argument format is invalid.
+       -2     program exited because argument format is invalid.
 
 AUTHOR
        gimura <gimura0001@gmail.com>

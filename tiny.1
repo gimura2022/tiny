@@ -5,8 +5,8 @@ tiny \- simple serial two size text messenger
 .
 .SH SYNOPSIS
 .B tiny
+\fBport\fR
 [\fB\-h\fR]
-[\fB\-p\fI port\fR]
 .
 .SH DESCRIPTION
 .B tiny
@@ -16,19 +16,16 @@ is very small serial two side text messenger
 .TP
 .BR \-h
 prints usage to stdout.
-.TP
-.BR \-p " " \fIport
-specifys port for host or client.
 .
 .SH EXIT STATUS
 .TP
 .BR 0
 program exited success.
 .TP
-.BR 1
+.BR -1
 program exited because received net error. 
 .TP
-.BR 2
+.BR -2
 program exited because argument format is invalid.
 .
 .SH AUTHOR
