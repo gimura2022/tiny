@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 	address.sin_port = htons(atoi(argv[1]));
 	
 	if (bind(server_fd, (struct sockaddr*) &address, sizeof(address)) < 0)	pexit("bind");
-	if (listen(server_fd, 3) < 0)						pexit("listen");
+	if (listen(server_fd, 1) < 0)						pexit("listen");
 	if ((user_fd = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &addrlen)) < 0)
 		pexit("accept");
 
