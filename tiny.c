@@ -38,8 +38,6 @@
 #define G 7	/* G constant */
 #define P 11	/* P constant */
 
-#define private_key(g, x) ((int) pow(g, (x)) % P)	/* formula for calculating key */
-
 #define get_bit(n, i) (((n) >> (i)) & 1)	/* get i bit from n */
 #define set_bit(n, i, x) ((x) == 0 ? \
 		((n) & (~(1 << ((i) - 1)))) : \
@@ -59,6 +57,22 @@ static enum encrypt encrypt = ENCRYPT_NONE;	/* encryption method (default no enc
 static uint32_t encrypt_key = 0;		/* key for encryption */
 static bool random_key      = false;		/* generate ramdom key and sync it with otherside */
 static bool verbose_mode    = false;		/* verbose mode */
+
+/* formula for calculating key */
+static uint32_t private_key(long long g, uint32_t x)
+{
+	int res = 1;
+
+	while (x > 0) {
+		if (x & 0x01)
+			res = (res * g % P);
+
+		g = g * g % P;
+		x = x >> 1;
+	}
+
+	return res;
+}
 
 /* verbose print */
 static void verbosef(const char* fmt, ...)
@@ -90,7 +104,7 @@ static uint32_t mix_encrypt_key(uint32_t old_key)
 	for (i = 0; i < array_len(mix_encrypt_key_table); i++)
 		res = set_bit(res, i, get_bit(old_key, mix_encrypt_key_table[i]));
 
-	verbosef("setuped new encryption key: %x\n", res);
+	verbosef("setuped new encryption key: 0x%x\n", res);
 
 	return res;
 }
@@ -432,6 +446,8 @@ int main(int argc, char* argv[])
 		usage(stderr, true);
 		exit(ARG_FAILURE);
 	}
+
+	srand(time(NULL));
 
 	switch (mode) {
 	case MODE_CLIENT:
