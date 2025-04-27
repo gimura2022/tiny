@@ -35,8 +35,8 @@
 #define NET_FAILURE 0	/* exit code for net errors */
 #define ARG_FAILURE 1	/* exit code for invalid arguments */
 
-#define G 7	/* G constant */
-#define P 11	/* P constant */
+#define G 5	/* G constant */
+#define P 23	/* P constant */
 
 #define get_bit(n, i) (((n) >> (i)) & 1)	/* get i bit from n */
 #define set_bit(n, i, x) ((x) == 0 ? \
@@ -58,8 +58,9 @@ static uint32_t encrypt_key = 0;		/* key for encryption */
 static bool random_key      = true;		/* generate ramdom key and sync it with otherside */
 static bool verbose_mode    = false;		/* verbose mode */
 
+
 /* formula for calculating key */
-static uint32_t private_key(long long g, uint32_t x)
+static uint32_t private_key(long long g, uint64_t x)
 {
 	int res = 1;
 
@@ -87,6 +88,51 @@ static void verbosef(const char* fmt, ...)
 	va_end(args);
 }
 
+/* get one synced key for host */
+static uint32_t sync_key_host(int socket)
+{
+	uint64_t x, res;
+
+	verbosef("generating keys\n");
+
+	x = rand() % UINT64_MAX;
+	verbosef("private x is %u\n", x);
+
+	res = private_key(G, x);
+	verbosef("sending %u to otherside\n", res);
+
+	send(socket, &res, sizeof(res), 0);
+	if (read(socket, &res, sizeof(res)) <= 0) {
+		printf("disconect\n");
+		exit(NET_FAILURE);
+	}
+
+	return private_key(res, x);
+}
+
+/* get one synced key for client */
+static uint32_t sync_key_client(int socket)
+{
+	uint64_t x, res, in;
+
+	verbosef("generating keys\n");
+
+	x = rand() % UINT64_MAX;
+	verbosef("private x is %u\n", x);
+
+	res = private_key(G, x);
+
+	if (read(socket, &in, sizeof(res)) <= 0) {
+		printf("disconect\n");
+		exit(NET_FAILURE);
+	}
+
+	verbosef("sending %u to otherside\n", res);
+	send(socket, &res, sizeof(res), 0);
+
+	return private_key(in, x);
+}
+
 /* table for mixing bits in encrypt key */
 static const uint8_t mix_encrypt_key_table[] = {
 	29, 26, 30, 15, 20, 12, 13, 16,
@@ -107,6 +153,41 @@ static uint32_t mix_encrypt_key(uint32_t old_key)
 	verbosef("setuped new encryption key: 0x%x\n", res);
 
 	return res;
+}
+
+static uint32_t uint32_pow(uint32_t base, uint32_t exp)
+{
+	uint32_t res = 1;
+
+	while (exp) {
+		if (exp % 2)
+			res *= base;
+
+		exp /= 2;
+		base *= base;
+	}
+
+	return res;
+}
+
+/* change keys */
+static void change_keys(int socket, uint32_t (*sync_keys)(int))
+{
+	if (!random_key)
+		return;
+
+	uint32_t key0, key1, pow_res;
+
+	key0 = sync_keys(socket);
+	key1 = sync_keys(socket);
+
+	verbosef("found 2 keys: %u, %u\n", key0, key1);
+
+	pow_res = uint32_pow((key0 + 1), (key1 + 1));
+
+	verbosef("%u ^ %u = %u\n", key0, key1, pow_res);
+
+	encrypt_key = mix_encrypt_key(pow_res);
 }
 
 /* encrypt line by xor method */
@@ -189,7 +270,6 @@ static void host(void)
 	int opt = 1;
 	int addrlen = sizeof(address);
 	char buffer[BUFFER_SIZE] = {0};
-	time_t start, end;
 
 	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
 		perror("socket failed");
@@ -223,35 +303,11 @@ static void host(void)
 		exit(NET_FAILURE);
 	}
 
-	start = time(NULL);
-	
 	printf("connected\n");
 
-	if (random_key) {
-		uint32_t x, res;
-
-		verbosef("generating keys\n");
-
-		x = rand() % UINT32_MAX;
-		verbosef("private x is %u\n", x);
-
-		res = private_key(G, x);
-		verbosef("sending %u to otherside\n", res);
-
-		send(new_socket, &res, sizeof(res), 0);
-		if (read(new_socket, &res, sizeof(res)) <= 0) {
-			printf("disconect\n");
-			return;
-		}
-
-		encrypt_key = mix_encrypt_key(private_key(res, x));
-	}
-
-	end = time(NULL);
-
-	verbosef("connection established in %lds\n", end - start);
-	
 	while(1) {
+		change_keys(new_socket, sync_key_host);
+
 		verbosef("wait for otherside responce\n");
 		int valread = read(new_socket, buffer, BUFFER_SIZE);
 
@@ -284,9 +340,6 @@ static void client(void)
 	int sock;
 	struct sockaddr_in serv_addr;
 	char buffer[BUFFER_SIZE] = {0};
-	time_t start, end;
-
-	start = time(NULL);
 	
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("socket");
@@ -311,32 +364,9 @@ static void client(void)
 	
 	printf("success\n");
 
-	if (random_key) {
-		uint32_t x, res, in;
-
-		verbosef("generating keys\n");
-
-		x = rand() % UINT32_MAX;
-		verbosef("private x is %u\n", x);
-
-		res = private_key(G, x);
-
-		if (read(sock, &in, sizeof(res)) <= 0) {
-			printf("disconect\n");
-			return;
-		}
-
-		verbosef("sending %u to otherside\n", res);
-		send(sock, &res, sizeof(res), 0);
-
-		encrypt_key = mix_encrypt_key(private_key(in, x));
-	}
-
-	end = time(NULL);
-
-	verbosef("connection established in %lds\n", end - start);
-	
 	while(1) {
+		change_keys(sock, sync_key_client);
+
 		printf("you: ");
 		fgets(buffer, BUFFER_SIZE, stdin);
 		buffer[strlen(buffer) - 1] = '\0';
