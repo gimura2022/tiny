@@ -32,6 +32,13 @@
 #define NET_FAILURE 0	/* exit code for net errors */
 #define ARG_FAILURE 1	/* exit code for invalid arguments */
 
+#define get_bit(n, i) (((n) >> (i)) & 1)	/* get i bit from n */
+#define set_bit(n, i, x) ((x) == 0 ? \
+		((n) & (~(1 << ((i) - 1)))) : \
+		((n) | (1 << ((i) - 1))))	/* set i bin from n */
+
+#define array_len(x) (sizeof(x) / sizeof((x)[0]))	/* get array lenght */
+
 /* encryption type */
 enum encrypt {
 	ENCRYPT_NONE = 0,
@@ -41,44 +48,88 @@ enum encrypt {
 static uint16_t port        = 8080;		/* net port */
 static const char* address  = NULL;		/* ip address or domain */
 static enum encrypt encrypt = ENCRYPT_NONE;	/* encryption method (default no encryption) */
-static int encrypt_key      = 0;		/* key for encryption */
+static uint32_t encrypt_key = 0;		/* key for encryption */
 
-/* apply xor to line */
-static char* apply_xor(const char* source)
+/* table for mixing bits in encrypt key */
+static uint8_t mix_encrypt_key_table[] = {
+	29, 26, 30, 15, 20, 12, 13, 16,
+	22, 11,  9, 17,  8, 27, 24,  4,
+	10, 14, 25, 21,  1,  6, 31,  2,
+	 7, 18, 28, 23, 32, 19,  5,  3
+};
+
+/* mix encrypt key bits */
+static uint32_t mix_encrypt_key(uint32_t old_key)
 {
-	char* out;
+	uint32_t res = old_key;
+
+	for (int i = 0; i < array_len(mix_encrypt_key_table); i++)
+		res = set_bit(res, i, get_bit(res, mix_encrypt_key_table[i]));
+
+	return res;
+}
+
+/* encrypt line by xor method */
+static uint8_t* encrypt_xor(const char* source, size_t* out_len)
+{
+	uint32_t* out;
 	int i;
 
-	out                 = malloc(strlen(source) + 1);
-	out[strlen(source)] = '\0';
+	out      = malloc(strlen(source) * sizeof(uint32_t));
+	*out_len = strlen(source) * sizeof(uint32_t);
 
-	for (i = 0; i < strlen(source); i++)
-		out[i] = source[i] ^ encrypt_key;
+	out[0] = source[0] ^ encrypt_key;
+	for (i = 1; i < strlen(source); i++)
+		out[i] = source[i] ^ source[i - 1];
+
+	return (uint8_t*) out;
+}
+
+/* decrypt line by xor method */
+static char* decrypt_xor(const uint8_t* source, size_t len)
+{
+	char* out;
+	uint32_t* int_source;
+	int i;
+
+	if (len % sizeof(uint32_t) != 0) {
+		fprintf(stderr, "invalid encryption\n");
+		exit(NET_FAILURE);
+	}
+
+	int_source                  = (uint32_t*) source;
+	out                         = malloc((len / sizeof(uint32_t)) + 1);
+	out[len / sizeof(uint32_t)] = '\0';
+
+	out[0] = int_source[0] ^ encrypt_key;
+	for (i = 1; i < len / sizeof(uint32_t); i++)
+		out[i] = int_source[i] ^ out[i - 1];
 
 	return out;
 }
 
-/* encrypt text */
-static char* encrypt_msg(const char* source)
+/* encrypt text to encoded bytes */
+static uint8_t* encrypt_msg(const char* source, size_t* out_len)
 {
 	switch (encrypt) {
 	case ENCRYPT_NONE:
-		return strcpy(malloc(strlen(source) + 1), source);
+		*out_len = strlen(source);
+		return memcpy(malloc(strlen(source)), source, strlen(source));
 
 	case ENCRYPT_XOR:
-		return apply_xor(source);
+		return encrypt_xor(source, out_len);
 	}
 }
 
-/* decrypt text */
-static char* decrypt_msg(const char* source)
+/* decrypt encoded bytes to text */
+static char* decrypt_msg(const uint8_t* source, size_t len)
 {
 	switch (encrypt) {
 	case ENCRYPT_NONE:
-		return strcpy(malloc(strlen(source) + 1), source);
+		return memcpy(malloc(len), source, len);
 
 	case ENCRYPT_XOR:
-		return apply_xor(source);
+		return decrypt_xor(source, len);
 	}
 }
 
@@ -133,9 +184,7 @@ static void host(void)
 			break;
 		}
 
-		buffer[valread] = '\0';
-
-		char* decrypted = decrypt_msg(buffer);
+		char* decrypted = decrypt_msg((uint8_t*) buffer, valread);
 		printf("otherside: %s\n", decrypted);
 		free(decrypted);
 		
@@ -143,8 +192,9 @@ static void host(void)
 		fgets(buffer, BUFFER_SIZE, stdin);
 		buffer[strlen(buffer) - 1] = '\0';
 
-		char* encrypted = encrypt_msg(buffer);
-		send(new_socket, encrypted, strlen(encrypted), 0);
+		size_t out_len;
+		uint8_t* encrypted = encrypt_msg(buffer, &out_len);
+		send(new_socket, encrypted, out_len, 0);
 		free(encrypted);
 	}
 	
@@ -187,8 +237,9 @@ static void client(void)
 		fgets(buffer, BUFFER_SIZE, stdin);
 		buffer[strlen(buffer) - 1] = '\0';
 
-		char* encrypted = encrypt_msg(buffer);
-		send(sock, encrypted, strlen(encrypted), 0);
+		size_t out_len;
+		uint8_t* encrypted = encrypt_msg(buffer, &out_len);
+		send(sock, encrypted, out_len, 0);
 		free(encrypted);
 		
 		int valread = read(sock, buffer, BUFFER_SIZE);
@@ -198,9 +249,7 @@ static void client(void)
 			break;
 		}
 
-		buffer[valread] = '\0';
-		
-		char* decrypted = decrypt_msg(buffer);
+		char* decrypted = decrypt_msg((uint8_t*) buffer, valread);
 		printf("otherside: %s\n", decrypted);
 		free(decrypted);
 	}
@@ -270,7 +319,7 @@ int main(int argc, char* argv[])
 		break;
 
 	case 'k':
-		encrypt_key = atoi(optarg);
+		encrypt_key = mix_encrypt_key(atoi(optarg));
 		break;
 
 	case 'h':
