@@ -66,7 +66,7 @@ static void verbosef(const char* fmt, ...)
 }
 
 /* table for mixing bits in encrypt key */
-static uint8_t mix_encrypt_key_table[] = {
+static const uint8_t mix_encrypt_key_table[] = {
 	29, 26, 30, 15, 20, 12, 13, 16,
 	22, 11,  9, 17,  8, 27, 24,  4,
 	10, 14, 25, 21,  1,  6, 31,  2,
@@ -82,7 +82,7 @@ static uint32_t mix_encrypt_key(uint32_t old_key)
 	for (i = 0; i < array_len(mix_encrypt_key_table); i++)
 		res = set_bit(res, i, get_bit(old_key, mix_encrypt_key_table[i]));
 
-	verbosef("setuped new encryption key: %u\n", res);
+	verbosef("setuped new encryption key: %x\n", res);
 
 	return res;
 }
@@ -102,7 +102,7 @@ static uint8_t* encrypt_xor(const char* source, size_t* out_len)
 
 	verbosef("encrypted messange: ");
 	for (i = 0; i < *out_len; i++)
-		verbosef("%x", ((uint8_t*) out)[i]);
+		verbosef("0x%x ", ((uint8_t*) out)[i]);
 	verbosef("\n");
 	verbosef("lenght: %u\n", *out_len);
 
