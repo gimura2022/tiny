@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
 	int server, user, opt;		/* a variables for a sockets (server, user) and for setsockopt */
 	char buffer[1024] = {0};	/* a buffer for messages */
 
-	if (argc < 2 || strcmp(argv[1], "-h") == 0) {	/* check arguments */
+	if (argc < 2 || strcmp(argv[1], "-h") == 0) {				/* check arguments */
 		puts("usage: tiny port [-h]\n""	-h	print usage\n");	/* if format invalid or */
 		exit(argc < 2 ? -2 : EXIT_SUCCESS);				/* given -h, print usage */
 	}
@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 	if (listen(server, 1) < 0)							pexit("listen");
 	if ((user = accept(server, (struct sockaddr*) &a, (socklen_t*) &al)) < 0)	pexit("accept");
 
-	while(1) {	/* a client connected, start the main loop */
+	while(1) {							/* a main loop */
 		if (read(user, buffer, sizeof(buffer)) <= 0) break;	/* read the client message */
 		fputs(buffer, stdout);					/* print the client message */
 		fgets(buffer, sizeof(buffer), stdin);			/* get a user input */
