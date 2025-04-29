@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 	if (listen(server, 1) < 0)							pexit("listen");
 	if ((user = accept(server, (struct sockaddr*) &a, (socklen_t*) &al)) < 0)	pexit("accept");
 
-	while(1) {							/* a main loop */
+	while(!feof(stdin)) {						/* a main loop, if stdin ends, exit */
 		if (read(user, buffer, sizeof(buffer)) <= 0) break;	/* read the client message */
 		fputs(buffer, stdout);					/* print the client message */
 		fgets(buffer, sizeof(buffer), stdin);			/* get a user input */
