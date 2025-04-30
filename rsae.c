@@ -3,7 +3,7 @@
 #include <string.h>	/* for use with tiny start command like "rsae key.pub | tiny | rsad key.priv" */
 #include <err.h>
 
-#include "trsa.h"	/* tiny rsa header */
+#include "rsa.h"	/* tiny rsa header */
 
 int main(int argc, char* argv[])
 {
@@ -12,19 +12,21 @@ int main(int argc, char* argv[])
 	char buffer[1024] = {0};	/* buffer for user input */
 
 	if (argc < 2 || strcmp(argv[1], "-h") == 0) {				 /* check arguments */
-		puts("usage: rsae pubkey_file [-h]\n""	-h	print usage\n"); /* if format invalid or */
+		puts("usage: rsae pubkey_file [-h]\n""	-h	print usage");	 /* if format invalid or */
 		exit(argc < 2 ? -2 : EXIT_SUCCESS);				 /* given -h, print usage */
 	}
 
 	pubkey = readkey(argv[1]);	/* read key from file */
 
-	while (1) {						/* main loop */
-		fgets(buffer, sizeof(buffer), stdin);		/* get user input */
-
+	while (fgets(buffer, sizeof(buffer), stdin)) {		/* main loop */
 		for (int i = 0; buffer[i] != '\0'; i++) {	/* encryption loop */
-			c = applykey(&pubkey, buffer[i]);	/* encrypt charcter */
-			printf("%llu\n", c);			/* send charcter */
+			c = applykey(&pubkey, buffer[i] + i);	/* encrypt charcter */
+			printf("%llu", c);			/* send charcter */
+			if (buffer[i + 1] != '\0') printf(":");	/* put separator */
 		}
+
+		printf("\n");
+		fflush(stdout);
 	}
 	
 	return 0;	/* exit */

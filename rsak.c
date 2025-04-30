@@ -5,65 +5,56 @@
 #include <string.h>
 #include <time.h>
 
-#include "trsa.h"	/* tiny rsa header */
+#include "rsa.h"	/* tiny rsa header */
+
+#define E 257
 
 static bool is_prime(uint16_t x)	/* check to number is prime */
 {
 	uint16_t i;
-
-	for (i = 2; i <= x / 2; i++)
-		if (x % i == 0)
-			return false;
-
+	for (i = 2; i <= x / 2; i++) if (x % i == 0) return false;
 	return true;
 }
 
-static uint16_t get_prime(void)	/* get random prime number */
+static unsigned long long int get_prime(void)	/* get random prime number */
 {
 	uint16_t res;
-
-	do {
-		srand(time(NULL));
-		res = rand() % UINT16_MAX + 5;
-	} while (!is_prime(res));
-
+	do res = rand() % UINT16_MAX + 5; while (!is_prime(res));
 	return res;
 }
 
-uint32_t find_d(uint16_t e, uint32_t phi)	/* find constant for private key */
+static long long int gcde(long long int a, long long int b, long long int* x, long long int* y)	/* for d */
 {
-	uint32_t eprev, dprev, d = 1, etemp, dtemp;
-	eprev = phi, dprev = phi;
-
-	while (e != 1) {
-		etemp = e;
-		dtemp = d;
-		e = eprev - eprev / etemp * e;
-		d = dprev - eprev / etemp * d;
-		eprev = etemp;
-		dprev = dtemp;
-		while (d < 0) d += phi;
+	if (!a) {
+		*x = 0, *y = 1;
+		return b;
 	}
 
-	return d;
+	long long int x1, y1;
+	long long int gcd = gcde(b % a, a, &x1, &y1);
+	*x = y1 - (b / a) * x1;
+	*y = x1;
+	return gcd;
 }
 
 int main(int argc, char* argv[])
 {
 	char buf[1024];			/* buffer used for filename storing */
-	uint16_t p, q;			/* random prime numbers */
+	long long int p, q, f, d, y;	/* random prime numbers */
 	struct rsakey pubkey, privkey;	/* public and private key */
 
 	if (argc < 2 || strcmp(argv[1], "-h") == 0) {				 /* check arguments */
-		puts("usage: rsak keyfile [-h]\n""	-h	print usage\n"); /* if format invalid or */
+		puts("usage: rsak keyfile [-h]\n""	-h	print usage"); /* if format invalid or */
 		exit(argc < 2 ? -2 : EXIT_SUCCESS);				 /* given -h, print usage */
 	}
 
-	p = get_prime();	/* generate 2 prime numbers */
-	q = get_prime();
+	srand(time(NULL));	/* set random seed */
 
-	pubkey  = (struct rsakey) { 3, p * q };					/* generate keys */
-	privkey = (struct rsakey) { find_d(3, (p - 1) * (q - 1)), p * q };
+	p = get_prime(), q = get_prime();	/* generate 2 prime numbers */
+	f = (p - 1) * (q - 1);			/* find f(n) = (p - 1) * (q - 1) */
+	d = gcde(E, f, &d, &y) < 0 ? d + f : d;	/* find private exponent */
+
+	pubkey = (struct rsakey) { E, p * q }, privkey = (struct rsakey) { d, p * q }; /* keys */
 
 	snprintf(buf, sizeof(buf), "%s.trsapub", argv[1]);	/* get public key file name */
 	writekey(buf, &pubkey);					/* write key to file */
