@@ -1,6 +1,6 @@
 #include <stdio.h>	/* rsad - small rsa decoder for tiny */
-#include <stdlib.h>	/* you need to have there headers in your system to compile tiny */
-#include <string.h>	/* for use with tiny start command like "rsae key.pub | tiny | rsad key.priv" */
+#include <stdlib.h>	/* you need to have libc, posix and rsa.h headers */
+#include <string.h>
 #include <err.h>
 
 #include "rsa.h"	/* tiny rsa header */

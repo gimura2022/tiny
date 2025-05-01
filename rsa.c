@@ -1,5 +1,5 @@
 #include <stdio.h>	/* trsa - tiny rsa realisation */
-#include <stdlib.h>	/* you need to have there headers in your system to compile tiny */
+#include <stdlib.h>	/* you need to have libc and posix headers */
 #include <err.h>
 
 #include "rsa.h"	/* tiny rsa header */
@@ -26,12 +26,10 @@ void writekey(const char* filename, const struct rsakey* key)	/* write key to fi
 	fclose(file);					/* close file */
 }
 
-long long int applykey(const struct rsakey* key, long long int c)	/* apply key to */
-{									/* value */
-        int i;
-        unsigned long long int res = 1;
-
+long long int applykey(const struct rsakey* key, long long int c)	/* apply key to value */
+{									/* fast approximation of */
+        int i;								/* (c ^ key->a) % key-> b */
+	unsigned long long int res = 1;
         for (i = 0; i < key->a; i++) res = (res * c) % key->b;
-
         return res;
 }

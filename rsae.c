@@ -1,6 +1,6 @@
 #include <stdio.h>	/* rsae - small rsa encoder for tiny */
-#include <stdlib.h>	/* you need to have there headers in your system to compile tiny */
-#include <string.h>	/* for use with tiny start command like "rsae key.pub | tiny | rsad key.priv" */
+#include <stdlib.h>	/* you need to have libc, posix, and rsa.h headers */
+#include <string.h>
 #include <err.h>
 
 #include "rsa.h"	/* tiny rsa header */
@@ -25,8 +25,7 @@ int main(int argc, char* argv[])
 			if (buffer[i + 1] != '\0') printf(":");	/* put separator */
 		}
 
-		printf("\n");
-		fflush(stdout);
+		printf("\n"); fflush(stdout);			/* print new line and flush stream */
 	}
 	
 	return 0;	/* exit */

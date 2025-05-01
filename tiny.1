@@ -1,7 +1,7 @@
 .TH tiny 1 2025-04-26 BSD-0
 .
 .SH NAME
-tiny \- simple serial two size text messenger
+tiny \- tcp messenger server
 .
 .SH SYNOPSIS
 .B tiny
@@ -10,10 +10,12 @@ tiny \- simple serial two size text messenger
 .
 .SH DESCRIPTION
 .B tiny
-is very small serial two side text messenger
+a project to create the smallest and most accessible messenger
+distributed in small parts that allow you to perform certain actions
 .P
-by default messenger is not encrypting text, if you whould like use encryption see
-.B rsae (1) rsad (1) rsak (1)
+by default the messenger works without encryption
+but if you have the necessary modules (\fBrsa\fR(3) \fBrsak\fR(1) \fBrsae\fR(1) \fBrsad\fR(1))
+you can use the messenger with rsa encryption and certificates.
 .
 .SH OPTIONS
 .TP
@@ -30,6 +32,18 @@ program exited because received net error.
 .TP
 .BR -2
 program exited because argument format is invalid.
+.
+.SH EXAMPLE
+.TP
+.BR server
+tiny \fIport\fR # open server at \fIport\fR 
+.TP
+.BR client
+ncat \fIaddress port\fR # connect to server at \fIport\fR, for example we're using ncat,
+you can use any other tcp text client
+.
+.SH SEE ALSO
+\fBrsa\fR(3) \fBrsak\fR(1) \fBrsae\fR(1) \fBrsad\fR(1)
 .
 .SH AUTHOR
 gimura <gimura0001@gmail.com>

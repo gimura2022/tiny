@@ -1,16 +1,18 @@
 tiny(1)			    General Commands Manual		       tiny(1)
 
 NAME
-       tiny - simple serial two size text messenger
+       tiny - tcp messenger server
 
 SYNOPSIS
        tiny port [-h]
 
 DESCRIPTION
-       tiny is very small serial two side text messenger
+       tiny a project to create the smallest and most accessible messenger
+       distributed in small parts that allow you to perform certain actions
 
-       by default messenger is not encrypting text, if you whould like use
-       encryption see rsae (1) rsad (1) rsak (1)
+       by default the messenger works without encryption but if you have the
+       necessary modules (rsa(3) rsak(1) rsae(1) rsad(1)) you can use the
+       messenger with rsa encryption and certificates.
 
 OPTIONS
        -h     prints usage to stdout.
@@ -21,6 +23,15 @@ EXIT STATUS
        -1     program exited because received net error.
 
        -2     program exited because argument format is invalid.
+
+EXAMPLE
+       server tiny port # open server at port
+
+       client ncat address port # connect to server at port, for example we're
+	      using ncat, you can use any other tcp text client
+
+SEE ALSO
+       rsa(3) rsak(1) rsae(1) rsad(1)
 
 AUTHOR
        gimura <gimura0001@gmail.com>

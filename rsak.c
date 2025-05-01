@@ -1,5 +1,5 @@
 #include <stdint.h>	/* rsak - tiny rsa key generator */
-#include <stdio.h>	/* you need to have there headers in your system to compile tiny */
+#include <stdio.h>	/* you need to have libc, posix and rsa.h headers */
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>

@@ -1,5 +1,5 @@
-#include <stdio.h>	/* tiny - very small messsenger */
-#include <stdlib.h>	/* you need to have there headers in your system to compile tiny */
+#include <stdio.h>	/* tiny - tcp messenger server */
+#include <stdlib.h>	/* you need to have libc and posix headers */
 #include <string.h>
 #include <unistd.h>
 #include <netinet/in.h>
@@ -8,8 +8,8 @@
 
 int main(int argc, char* argv[])
 {
-	int server, user, opt, readsize; /* a variables for a sockets (server, user) and for setsockopt */
-	char buffer[1024] = {0};	 /* a buffer for messages */
+	int server, user, opt, readsize; /* variables for sockets (server, user) and for setsockopt */
+	char buffer[1024] = {0};	 /* buffer for messages */
 
 	if (argc < 2 || strcmp(argv[1], "-h") == 0) {				/* check arguments */
 		puts("usage: tiny port [-h]\n""	-h	print usage");		/* if format invalid or */
@@ -25,15 +25,15 @@ int main(int argc, char* argv[])
 	if (listen(server, 1) < 0)							pexit("listen");
 	if ((user = accept(server, (struct sockaddr*) &a, (socklen_t*) &al)) < 0)	pexit("accept");
 
-	while (!feof(stdin)) {	/* a main loop, if stdin ends, exit */
-		if ((readsize = read(user, buffer, sizeof(buffer))) <= 0) break;/* read the client message */
-		buffer[readsize] = '\0';
-		fputs(buffer, stdout); fflush(stdout);			/* print the client message */
+	while (!feof(stdin)) {	/* main loop, if stdin ends, exit */
+		if ((readsize = read(user, buffer, sizeof(buffer))) <= 0) break;
+		buffer[readsize] = '\0';				/* read client message */
+		fputs(buffer, stdout); fflush(stdout);			/* print client message */
 		fgets(buffer, sizeof(buffer), stdin);			/* get user input */
-		send(user, buffer, strlen(buffer), 0);			/* send a user input to the client */
+		send(user, buffer, strlen(buffer), 0);			/* send user input to client */
 	}
 
-	close(user);	/* the client connection interrupted, close a user socket and a server socket */
+	close(user);	/* the client connection interrupted, close user socket and server socket */
 	close(server);
 
 	return 0;	/* exit with success exit code */
